@@ -3,7 +3,7 @@ import database as db
 
 db.create_tables()
 
-st.title("📦 Zarządzanie Produktami i Kategoriami")
+st.title("📦 Magazyn budowlany – produkty i kategorie")
 
 menu = st.sidebar.selectbox(
     "Menu",
@@ -43,23 +43,46 @@ if menu == "Produkty":
 
     with st.form("add_product"):
         nazwa = st.text_input("Nazwa produktu")
-        liczba = st.number_input("Liczba", min_value=0, step=1)
+        liczba = st.number_input("Ilość", min_value=0, step=1)
         cena = st.number_input("Cena", min_value=0.0, format="%.2f")
+        stan_min = st.number_input(
+            "Minimalny stan magazynowy",
+            min_value=0,
+            step=1
+        )
         kategoria = st.selectbox("Kategoria", category_dict.keys())
         submitted = st.form_submit_button("Dodaj")
 
         if submitted:
-            db.add_product(nazwa, liczba, cena, category_dict[kategoria])
+            db.add_product(
+                nazwa,
+                liczba,
+                cena,
+                category_dict[kategoria],
+                stan_min
+            )
             st.success("Produkt dodany")
 
     st.header("📋 Lista produktów")
+
     products = db.get_products()
 
     for prod in products:
+        id_, nazwa, ilosc, cena, kategoria, stan_min = prod
+
         col1, col2 = st.columns([4, 1])
-        col1.write(
-            f"**{prod[1]}** | Ilość: {prod[2]} | Cena: {prod[3]} zł | Kategoria: {prod[4]}"
-        )
-        if col2.button("Usuń", key=f"prod_{prod[0]}"):
-            db.delete_product(prod[0])
+
+        # 🚨 ALERT NISKIEGO STANU
+        if ilosc <= stan_min:
+            col1.error(
+                f"⚠️ NISKI STAN | {nazwa} ({kategoria}) "
+                f"– {ilosc} szt. | min: {stan_min}"
+            )
+        else:
+            col1.write(
+                f"**{nazwa}** | Ilość: {ilosc} | Cena: {cena} zł | Kategoria: {kategoria}"
+            )
+
+        if col2.button("Usuń", key=f"prod_{id_}"):
+            db.delete_product(id_)
             st.experimental_rerun()
