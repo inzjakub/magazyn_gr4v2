@@ -24,6 +24,7 @@ def create_tables():
             Liczba INTEGER,
             Cena REAL,
             Kategoria_id INTEGER,
+            Stan_min INTEGER DEFAULT 0,
             FOREIGN KEY (Kategoria_id) REFERENCES Kategorie(id)
         )
         """)
@@ -31,7 +32,7 @@ def create_tables():
         conn.commit()
 
 
-# ---- Kategorie ----
+# ---------- KATEGORIE ----------
 def add_category(nazwa, opis):
     with get_connection() as conn:
         conn.execute(
@@ -50,13 +51,14 @@ def get_categories():
         return conn.execute("SELECT * FROM Kategorie").fetchall()
 
 
-# ---- Produkty ----
-def add_product(nazwa, liczba, cena, kategoria_id):
+# ---------- PRODUKTY ----------
+def add_product(nazwa, liczba, cena, kategoria_id, stan_min):
     with get_connection() as conn:
         conn.execute(
-            """INSERT INTO Produkty (Nazwa, Liczba, Cena, Kategoria_id)
-               VALUES (?, ?, ?, ?)""",
-            (nazwa, liczba, cena, kategoria_id)
+            """INSERT INTO Produkty
+               (Nazwa, Liczba, Cena, Kategoria_id, Stan_min)
+               VALUES (?, ?, ?, ?, ?)""",
+            (nazwa, liczba, cena, kategoria_id, stan_min)
         )
         conn.commit()
 
@@ -68,7 +70,13 @@ def delete_product(product_id):
 def get_products():
     with get_connection() as conn:
         return conn.execute("""
-            SELECT Produkty.id, Produkty.Nazwa, Liczba, Cena, Kategorie.Nazwa
+            SELECT 
+                Produkty.id,
+                Produkty.Nazwa,
+                Produkty.Liczba,
+                Produkty.Cena,
+                Kategorie.Nazwa,
+                Produkty.Stan_min
             FROM Produkty
             LEFT JOIN Kategorie ON Produkty.Kategoria_id = Kategorie.id
         """).fetchall()
